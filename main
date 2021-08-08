@@ -1,0 +1,59 @@
+#!/user/bin/env python
+# -*- coding:utf-8 -*-
+# 作者：周桂华
+# 开发时间: 2021/8/1 16:30
+
+import requests
+import random
+from hashlib import md5
+import time
+
+
+class YouDaoFanYi(object):
+    def __init__(self, msg):
+        self.url = 'http://fanyi.youdao.com/translate_o?smartresult=dict&smartresult=rule'
+        self.msg = msg
+        self.lts = self.get_lts()
+        self.salt = self.get_salt()
+        self.sign = self.get_sign()
+
+    def get_salt(self):
+        return self.lts + str(random.randint(0, 10))
+
+    def get_sign(self):
+        initial = 'fanyideskweb' + self.msg + self.salt + 'Tbh5E8=q6U3EXe+&L[4c@'
+        # 加密前需要编码 否存可能会出现TypeError: Unicode-objects must be encoded before hashing
+        return md5(initial.encode('utf-8')).hexdigest()
+
+    def get_lts(self):
+        return str(int(time.time() * 1000))
+
+    def get_res(self):
+        data = {
+            'i': self.msg,
+            'from': 'AUTO',
+            'to': 'AUTO',
+            'smartresult': 'dict',
+            'client': 'fanyideskweb',
+            'salt': self.salt,
+            'sign': self.sign,
+            'lts': self.lts,
+            'bv': '3da01a09873456cfb5dba05f2124b148',
+            'doctype': 'json',
+            'version': '2.1',
+            'keyfrom': 'fanyi.web',
+            'action': 'FY_BY_CLICKBUTTION'
+        }
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                                 '(KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36',
+                   'Referer': 'http://fanyi.youdao.com/',
+                   # 更换标识
+                   'Cookie': 'OUTFOX_SEARCH_USER_ID=******'}
+        resp = requests.post(self.url, headers=headers, data=data)
+        return resp.json()['translateResult'][0][0]['tgt']
+
+
+if __name__ == '__main__':
+    res = YouDaoFanYi("おはようございます")
+    print(res.get_res())
+    
